@@ -1,0 +1,1083 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Lua_Executor"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0.7, 0, 0.7, 0)
+MainFrame.Position = UDim2.new(0.15, 0, 0.15, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 40) -- Dark Blue
+MainFrame.BorderSizePixel = 0
+MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+local UICorner_Main = Instance.new("UICorner")
+UICorner_Main.CornerRadius = UDim.new(0, 8)
+UICorner_Main.Parent = MainFrame
+
+-- Main Frame Glow/Stroke
+local UIStroke_Main = Instance.new("UIStroke")
+UIStroke_Main.Color = Color3.fromRGB(0, 180, 255) -- Bright blue glow
+UIStroke_Main.Transparency = 0.6
+UIStroke_Main.Thickness = 2
+UIStroke_Main.Parent = MainFrame
+
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0.06, 0)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Slightly lighter dark blue
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+-- Title Bar Gradient for light effect
+local UIGradient_Title = Instance.new("UIGradient")
+UIGradient_Title.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 150, 255)), -- Start with vibrant red
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(30, 35, 60)), -- Transition to main blue
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255)) -- End with vibrant black 
+})
+UIGradient_Title.Rotation = 90
+UIGradient_Title.Transparency = NumberSequence.new(0.2, 0.2)
+UIGradient_Title.Parent = TitleBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(0.8, 0, 1, 0)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundTransparency = 1 -- Transparent to show gradient
+TitleLabel.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.TextSize = 18
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.TextWrapped = true
+TitleLabel.Text = "  KRNL"
+TitleLabel.Parent = TitleBar
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0.05, 0, 1, 0)
+MinimizeButton.Position = UDim2.new(0.89, 0, 0, 0)
+MinimizeButton.BackgroundTransparency = 1 -- Transparent
+MinimizeButton.TextColor3 = Color3.fromRGB(0, 200, 255) -- Vibrant Blue
+MinimizeButton.Font = Enum.Font.SourceSansBold
+MinimizeButton.TextSize = 18
+MinimizeButton.Text = "_"
+MinimizeButton.Parent = TitleBar
+
+local UIStroke_Minimize = Instance.new("UIStroke")
+UIStroke_Minimize.Color = Color3.fromRGB(0, 180, 255)
+UIStroke_Minimize.Transparency = 0.6
+UIStroke_Minimize.Thickness = 1
+UIStroke_Minimize.Parent = MinimizeButton
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0.05, 0, 1, 0)
+CloseButton.Position = UDim2.new(0.94, 0, 0, 0)
+CloseButton.BackgroundTransparency = 1 -- Transparent
+CloseButton.TextColor3 = Color3.fromRGB(200, 60, 60) -- Blue 
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 18
+CloseButton.Text = "□"
+CloseButton.Parent = TitleBar
+
+local UIStroke_Close = Instance.new("UIStroke")
+UIStroke_Close.Color = Color3.fromRGB(200, 60, 60)
+UIStroke_Close.Transparency = 0.6
+UIStroke_Close.Thickness = 1
+UIStroke_Close.Parent = CloseButton
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, 0, 0.94, 0)
+ContentFrame.Position = UDim2.new(0, 0.0, 0.06, 0)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 40) -- Match MainFrame
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Parent = MainFrame
+
+-- Script List Panel
+local ScriptListPanel = Instance.new("Frame")
+ScriptListPanel.Size = UDim2.new(0.25, 0, 1, 0)
+ScriptListPanel.Position = UDim2.new(0, 0, 0, 0)
+ScriptListPanel.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Darker secondary blue
+ScriptListPanel.BorderSizePixel = 0
+ScriptListPanel.Parent = ContentFrame
+
+local ScriptListTitle = Instance.new("TextLabel")
+ScriptListTitle.Size = UDim2.new(1, 0, 0.08, 0)
+ScriptListTitle.Position = UDim2.new(0, 0, 0, 0)
+ScriptListTitle.BackgroundColor3 = Color3.fromRGB(40, 45, 75) -- Tertiary blue
+ScriptListTitle.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+ScriptListTitle.Font = Enum.Font.SourceSansBold
+ScriptListTitle.TextSize = 16
+ScriptListTitle.Text = "Saved Scripts"
+ScriptListTitle.Parent = ScriptListPanel
+
+local ScriptListScrollingFrame = Instance.new("ScrollingFrame")
+ScriptListScrollingFrame.Size = UDim2.new(1, 0, 0.8, 0)
+ScriptListScrollingFrame.Position = UDim2.new(0, 0, 0.08, 0)
+ScriptListScrollingFrame.BackgroundColor3 = Color3.fromRGB(25, 30, 50) -- Slightly darker for scrolling area
+ScriptListScrollingFrame.BorderSizePixel = 0
+ScriptListScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScriptListScrollingFrame.ScrollBarThickness = 6
+ScriptListScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 120, 255) -- Blue scrollbar
+ScriptListScrollingFrame.Parent = ScriptListPanel
+
+local UIListLayout_Scripts = Instance.new("UIListLayout")
+UIListLayout_Scripts.FillDirection = Enum.FillDirection.Vertical
+UIListLayout_Scripts.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout_Scripts.Padding = UDim.new(0, 2)
+UIListLayout_Scripts.Parent = ScriptListScrollingFrame
+
+local ScriptListButtonsFrame = Instance.new("Frame")
+ScriptListButtonsFrame.Size = UDim2.new(1, 0, 0.12, 0)
+ScriptListButtonsFrame.Position = UDim2.new(0, 0, 0.88, 0)
+ScriptListButtonsFrame.BackgroundColor3 = Color3.fromRGB(40, 45, 75) -- Tertiary blue
+ScriptListButtonsFrame.BorderSizePixel = 0
+ScriptListButtonsFrame.Parent = ScriptListPanel
+
+local UIListLayout_ListButtons = Instance.new("UIListLayout")
+UIListLayout_ListButtons.FillDirection = Enum.FillDirection.Horizontal
+UIListLayout_ListButtons.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout_ListButtons.VerticalAlignment = Enum.VerticalAlignment.Center
+UIListLayout_ListButtons.Padding = UDim.new(0, 5)
+UIListLayout_ListButtons.Parent = ScriptListButtonsFrame
+
+local NewScriptButton = Instance.new("TextButton")
+NewScriptButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+NewScriptButton.BackgroundTransparency = 1 -- Transparent
+NewScriptButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Vibrant Blue
+NewScriptButton.Font = Enum.Font.SourceSansBold
+NewScriptButton.TextSize = 14
+NewScriptButton.Text = "{حدث}"
+NewScriptButton.Parent = ScriptListButtonsFrame
+
+local UIStroke_New = Instance.new("UIStroke")
+UIStroke_New.Color = Color3.fromRGB(100, 200, 255) -- Light blue glow
+UIStroke_New.Transparency = 0.6
+UIStroke_New.Thickness = 1
+UIStroke_New.Parent = NewScriptButton
+
+local LoadSelectedButton = Instance.new("TextButton")
+LoadSelectedButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+LoadSelectedButton.BackgroundTransparency = 1 -- Transparent
+LoadSelectedButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Vibrant Blue
+LoadSelectedButton.Font = Enum.Font.SourceSansBold
+LoadSelectedButton.TextSize = 14
+LoadSelectedButton.Text = "☆فتح"
+LoadSelectedButton.Parent = ScriptListButtonsFrame
+
+local UIStroke_Load = Instance.new("UIStroke")
+UIStroke_Load.Color = Color3.fromRGB(100, 200, 255) -- Light blue glow
+UIStroke_Load.Transparency = 0.6
+UIStroke_Load.Thickness = 1
+UIStroke_Load.Parent = LoadSelectedButton
+
+local DeleteSelectedButton = Instance.new("TextButton")
+DeleteSelectedButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+DeleteSelectedButton.BackgroundTransparency = 1 -- Transparent
+DeleteSelectedButton.TextColor3 = Color3.fromRGB(200, 60, 60) -- Red
+DeleteSelectedButton.Font = Enum.Font.SourceSansBold
+DeleteSelectedButton.TextSize = 14
+DeleteSelectedButton.Text = "☆حذف"
+DeleteSelectedButton.Parent = ScriptListButtonsFrame
+
+local UIStroke_Delete = Instance.new("UIStroke")
+UIStroke_Delete.Color = Color3.fromRGB(255, 120, 120) -- Light red glow
+UIStroke_Delete.Transparency = 0.6
+UIStroke_Delete.Thickness = 1
+UIStroke_Delete.Parent = DeleteSelectedButton
+
+-- Editor Panel
+local EditorPanel = Instance.new("Frame")
+EditorPanel.Size = UDim2.new(0.75, 0, 1, 0)
+EditorPanel.Position = UDim2.new(0.25, 0, 0, 0)
+EditorPanel.BackgroundColor3 = Color3.fromRGB(20, 25, 40) -- Match MainFrame
+EditorPanel.BorderSizePixel = 0
+EditorPanel.Parent = ContentFrame
+
+local ScriptNameTextBox = Instance.new("TextBox")
+ScriptNameTextBox.Size = UDim2.new(1, 0, 0.08, 0)
+ScriptNameTextBox.Position = UDim2.new(0, 0, 0, 0)
+ScriptNameTextBox.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Darker secondary blue
+ScriptNameTextBox.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+ScriptNameTextBox.Font = Enum.Font.SourceSansBold
+ScriptNameTextBox.TextSize = 16
+ScriptNameTextBox.TextXAlignment = Enum.TextXAlignment.Left
+ScriptNameTextBox.Text = "  Untitled Script"
+ScriptNameTextBox.PlaceholderText = "  Script Name"
+ScriptNameTextBox.Parent = EditorPanel
+
+local CodeTextBox = Instance.new("TextBox")
+CodeTextBox.Size = UDim2.new(1, 0, 0.8, 0)
+CodeTextBox.Position = UDim2.new(0, 0, 0.08, 0)
+CodeTextBox.BackgroundColor3 = Color3.fromRGB(15, 20, 35) -- Very dark blue for code area
+CodeTextBox.TextColor3 = Color3.fromRGB(220, 220, 220) -- Lighter grey for code
+CodeTextBox.Font = Enum.Font.Code
+CodeTextBox.TextSize = 14
+CodeTextBox.TextXAlignment = Enum.TextXAlignment.Left
+CodeTextBox.TextYAlignment = Enum.TextYAlignment.Top
+CodeTextBox.MultiLine = true
+CodeTextBox.ClearTextOnFocus = false
+CodeTextBox.PlaceholderText = "</>مرحبا"
+CodeTextBox.Parent = EditorPanel
+
+local EditorButtonsFrame = Instance.new("Frame")
+EditorButtonsFrame.Size = UDim2.new(1, 0, 0.12, 0)
+EditorButtonsFrame.Position = UDim2.new(0, 0, 0.88, 0)
+EditorButtonsFrame.BackgroundColor3 = Color3.fromRGB(40, 45, 75) -- Tertiary blue
+EditorButtonsFrame.BorderSizePixel = 0
+EditorButtonsFrame.Parent = EditorPanel
+
+local UIListLayout_EditorButtons = Instance.new("UIListLayout")
+UIListLayout_EditorButtons.FillDirection = Enum.FillDirection.Horizontal
+UIListLayout_EditorButtons.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout_EditorButtons.VerticalAlignment = Enum.VerticalAlignment.Center
+UIListLayout_EditorButtons.Padding = UDim.new(0, 5)
+UIListLayout_EditorButtons.Parent = EditorButtonsFrame
+
+local ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+ExecuteButton.BackgroundTransparency = 1 -- Transparent
+ExecuteButton.TextColor3 = Color3.fromRGB(40, 180, 90) -- Green for execute
+ExecuteButton.Font = Enum.Font.SourceSansBold
+ExecuteButton.TextSize = 16
+ExecuteButton.Text = "{Lua}"
+ExecuteButton.Parent = EditorButtonsFrame
+
+local UIStroke_Execute = Instance.new("UIStroke")
+UIStroke_Execute.Color = Color3.fromRGB(90, 255, 140) -- Light green glow
+UIStroke_Execute.Transparency = 0.6
+UIStroke_Execute.Thickness = 1
+UIStroke_Execute.Parent = ExecuteButton
+
+local SaveCurrentButton = Instance.new("TextButton")
+SaveCurrentButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+SaveCurrentButton.BackgroundTransparency = 1 -- Transparent
+SaveCurrentButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Vibrant Blue
+SaveCurrentButton.Font = Enum.Font.SourceSansBold
+SaveCurrentButton.TextSize = 16
+SaveCurrentButton.Text = "حفظ☆"
+SaveCurrentButton.Parent = EditorButtonsFrame
+
+local UIStroke_SaveCurrent = Instance.new("UIStroke")
+UIStroke_SaveCurrent.Color = Color3.fromRGB(100, 200, 255) -- Light blue glow
+UIStroke_SaveCurrent.Transparency = 0.6
+UIStroke_SaveCurrent.Thickness = 1
+UIStroke_SaveCurrent.Parent = SaveCurrentButton
+
+local ClearEditorButton = Instance.new("TextButton")
+ClearEditorButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+ClearEditorButton.BackgroundTransparency = 1 -- Transparent
+ClearEditorButton.TextColor3 = Color3.fromRGB(200, 60, 60) -- black
+ClearEditorButton.Font = Enum.Font.SourceSansBold
+ClearEditorButton.TextSize = 16
+ClearEditorButton.Text = "{حذف}"
+ClearEditorButton.Parent = EditorButtonsFrame
+
+local UIStroke_Clear = Instance.new("UIStroke")
+UIStroke_Clear.Color = Color3.fromRGB(255, 120, 120) -- Light red glow
+UIStroke_Clear.Transparency = 0.6
+UIStroke_Clear.Thickness = 1
+UIStroke_Clear.Parent = ClearEditorButton
+
+-- Data Storage
+local SavedScriptsFolder = ScreenGui:FindFirstChild("SavedScripts")
+if not SavedScriptsFolder then
+    SavedScriptsFolder = Instance.new("Folder")
+    SavedScriptsFolder.Name = "SavedScripts"
+    SavedScriptsFolder.Parent = ScreenGui
+end
+
+local SelectedScriptValue = Instance.new("StringValue")
+SelectedScriptValue.Name = "SelectedScript"
+SelectedScriptValue.Value = "" -- Stores the name of the currently selected script
+SelectedScriptValue.Parent = ScreenGui
+
+local currentSelectedScriptButton = nil
+local originalFrameSize = MainFrame.Size
+local minimizedSize = UDim2.new(MainFrame.Size.X.Scale, MainFrame.Size.X.Offset, TitleBar.Size.Y.Scale, TitleBar.Size.Y.Offset)
+local isMinimized = false
+
+local function updateScriptList()
+    for _, child in ipairs(ScriptListScrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local scriptNames = {}
+    for _, scriptValue in ipairs(SavedScriptsFolder:GetChildren()) do
+        if scriptValue:IsA("StringValue") then
+            table.insert(scriptNames, scriptValue.Name)
+        end
+    end
+    table.sort(scriptNames)
+
+    local newCanvasY = 0
+    for _, scriptName in ipairs(scriptNames) do
+        local scriptButton = Instance.new("TextButton")
+        scriptButton.Name = scriptName
+        scriptButton.Size = UDim2.new(0.95, 0, 0, 30)
+        scriptButton.BackgroundTransparency = 1 -- Transparent
+        scriptButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Blue for script buttons
+        scriptButton.Font = Enum.Font.SourceSans
+        scriptButton.TextSize = 14
+        scriptButton.TextXAlignment = Enum.TextXAlignment.Left
+        scriptButton.Text = "  " .. scriptName
+        scriptButton.Parent = ScriptListScrollingFrame
+
+        local UICorner_ScriptButton = Instance.new("UICorner")
+        UICorner_ScriptButton.CornerRadius = UDim.new(0, 4)
+        UICorner_ScriptButton.Parent = scriptButton
+
+        local UIStroke_ScriptButton = Instance.new("UIStroke")
+        UIStroke_ScriptButton.Color = Color3.fromRGB(100, 200, 255)
+        UIStroke_ScriptButton.Transparency = 0.8
+        UIStroke_ScriptButton.Thickness = 1
+        UIStroke_ScriptButton.Parent = scriptButton
+
+        scriptButton.MouseButton1Click:Connect(function()
+            if currentSelectedScriptButton then
+                currentSelectedScriptButton.BackgroundTransparency = 1
+                currentSelectedScriptButton.UIStroke.Transparency = 0.8
+            end
+            scriptButton.BackgroundTransparency = 0.8 -- Slightly visible when selected
+            scriptButton.UIStroke.Transparency = 0.2 -- Make glow more visible
+            currentSelectedScriptButton = scriptButton
+            SelectedScriptValue.Value = scriptName
+        end)
+        newCanvasY = newCanvasY + 30 + UIListLayout_Scripts.Padding.Offset
+    end
+    ScriptListScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, newCanvasY)
+end
+
+local function loadScript(scriptName)
+    local scriptValue = SavedScriptsFolder:FindFirstChild(scriptName)
+    if scriptValue and scriptValue:IsA("StringValue") then
+        CodeTextBox.Text = scriptValue.Value
+        ScriptNameTextBox.Text = scriptName
+        SelectedScriptValue.Value = scriptName
+        if currentSelectedScriptButton then
+            currentSelectedScriptButton.BackgroundTransparency = 1
+            currentSelectedScriptButton.UIStroke.Transparency = 0.8
+        end
+        local button = ScriptListScrollingFrame:FindFirstChild(scriptName)
+        if button then
+            button.BackgroundTransparency = 0.8
+            button.UIStroke.Transparency = 0.2
+            currentSelectedScriptButton = button
+        end
+    end
+end
+
+local function saveScript(scriptName, scriptContent)
+    local existingScript = SavedScriptsFolder:FindFirstChild(scriptName)
+    if existingScript and existingScript:IsA("StringValue") then
+        existingScript.Value = scriptContent
+    else
+        local newScriptValue = Instance.new("StringValue")
+        newScriptValue.Name = scriptName
+        newScriptValue.Value = scriptContent
+        newScriptValue.Parent = SavedScriptsFolder
+    end
+    updateScriptList()
+    loadScript(scriptName)
+end
+
+local function deleteScript(scriptName)
+    local scriptValue = SavedScriptsFolder:FindFirstChild(scriptName)
+    if scriptValue and scriptValue:IsA("StringValue") then
+        scriptValue:Destroy()
+        updateScriptList()
+        if SelectedScriptValue.Value == scriptName then
+            CodeTextBox.Text = ""
+            ScriptNameTextBox.Text = "  Untitled Script"
+            SelectedScriptValue.Value = ""
+            currentSelectedScriptButton = nil
+        end
+    end
+end
+
+ExecuteButton.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        local func = loadstring(CodeTextBox.Text)
+        if func then
+            func()
+        else
+            warn("Failed to load string, possibly empty or invalid code.")
+        end
+    end)
+    if not success then
+        warn("Execution error: " .. tostring(err))
+    end
+end)
+
+SaveCurrentButton.MouseButton1Click:Connect(function()
+    local scriptName = ScriptNameTextBox.Text:gsub("^%s+", ""):gsub("%s+$", "") -- Trim whitespace
+    if scriptName == "" or scriptName == "Untitled Script" then
+        local namePrompt = Instance.new("TextBox")
+        namePrompt.Size = UDim2.new(0, 200, 0, 30)
+        namePrompt.Position = UDim2.new(0.5, -100, 0.5, -15)
+        namePrompt.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Dark blue
+        namePrompt.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+        namePrompt.Text = ""
+        namePrompt.PlaceholderText = "Enter script name"
+        namePrompt.Font = Enum.Font.SourceSansBold
+        namePrompt.TextSize = 14
+        namePrompt.Parent = ScreenGui
+        namePrompt.ZIndex = 10 -- Ensure it's on top
+
+        local UICorner_Prompt = Instance.new("UICorner")
+        UICorner_Prompt.CornerRadius = UDim.new(0, 4)
+        UICorner_Prompt.Parent = namePrompt
+
+        local UIStroke_Prompt = Instance.new("UIStroke")
+        UIStroke_Prompt.Color = Color3.fromRGB(100, 200, 255)
+        UIStroke_Prompt.Transparency = 0.5
+        UIStroke_Prompt.Thickness = 1
+        UIStroke_Prompt.Parent = namePrompt
+
+        namePrompt.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local newName = namePrompt.Text:gsub("^%s+", ""):gsub("%s+$", "")
+                if newName ~= "" then
+                    saveScript(newName, CodeTextBox.Text)
+                end
+            end
+            namePrompt:Destroy()
+        end)
+        namePrompt:CaptureFocus()
+    else
+        saveScript(scriptName, CodeTextBox.Text)
+    end
+end)
+
+ClearEditorButton.MouseButton1Click:Connect(function()
+    CodeTextBox.Text = ""
+    ScriptNameTextBox.Text = "  Untitled Script"
+    SelectedScriptValue.Value = ""
+    if currentSelectedScriptButton then
+        currentSelectedScriptButton.BackgroundTransparency = 1
+        currentSelectedScriptButton.UIStroke.Transparency = 0.8
+        currentSelectedScriptButton = nil
+    end
+end)
+
+NewScriptButton.MouseButton1Click:Connect(function()
+    CodeTextBox.Text = ""
+    ScriptNameTextBox.Text = "  Untitled Script"
+    SelectedScriptValue.Value = ""
+    if currentSelectedScriptButton then
+        currentSelectedScriptButton.BackgroundTransparency = 1
+        currentSelectedScriptButton.UIStroke.Transparency = 0.8
+        currentSelectedScriptButton = nil
+    end
+end)
+
+LoadSelectedButton.MouseButton1Click:Connect(function()
+    local scriptName = SelectedScriptValue.Value
+    if scriptName ~= "" then
+        loadScript(scriptName)
+    end
+end)
+
+DeleteSelectedButton.MouseButton1Click:Connect(function()
+    local scriptName = SelectedScriptValue.Value
+    if scriptName ~= "" then
+        deleteScript(scriptName)
+    end
+end)
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    if isMinimized then
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(MainFrame, tweenInfo, {Size = originalFrameSize}):Play()
+        ContentFrame.Visible = true
+        isMinimized = false
+    else
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(MainFrame, tweenInfo, {Size = minimizedSize}):Play()
+        ContentFrame.Visible = false
+        isMinimized = true
+    end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Initial setup
+updateScriptList()
+
+-- Make the frame draggable
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.Ended then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+end) local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Lua_Executor"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0.7, 0, 0.7, 0)
+MainFrame.Position = UDim2.new(0.15, 0, 0.15, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 40) -- Dark Blue
+MainFrame.BorderSizePixel = 0
+MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+local UICorner_Main = Instance.new("UICorner")
+UICorner_Main.CornerRadius = UDim.new(0, 8)
+UICorner_Main.Parent = MainFrame
+
+-- Main Frame Glow/Stroke
+local UIStroke_Main = Instance.new("UIStroke")
+UIStroke_Main.Color = Color3.fromRGB(0, 180, 255) -- Bright blue glow
+UIStroke_Main.Transparency = 0.6
+UIStroke_Main.Thickness = 2
+UIStroke_Main.Parent = MainFrame
+
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0.06, 0)
+TitleBar.Position = UDim2.new(0, 0, 0, 0)
+TitleBar.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Slightly lighter dark blue
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+-- Title Bar Gradient for light effect
+local UIGradient_Title = Instance.new("UIGradient")
+UIGradient_Title.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 150, 255)), -- Start with vibrant red
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(30, 35, 60)), -- Transition to main blue
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255)) -- End with vibrant black 
+})
+UIGradient_Title.Rotation = 90
+UIGradient_Title.Transparency = NumberSequence.new(0.2, 0.2)
+UIGradient_Title.Parent = TitleBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(0.8, 0, 1, 0)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundTransparency = 1 -- Transparent to show gradient
+TitleLabel.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.TextSize = 18
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.TextWrapped = true
+TitleLabel.Text = "  KRNL"
+TitleLabel.Parent = TitleBar
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Size = UDim2.new(0.05, 0, 1, 0)
+MinimizeButton.Position = UDim2.new(0.89, 0, 0, 0)
+MinimizeButton.BackgroundTransparency = 1 -- Transparent
+MinimizeButton.TextColor3 = Color3.fromRGB(0, 200, 255) -- Vibrant Blue
+MinimizeButton.Font = Enum.Font.SourceSansBold
+MinimizeButton.TextSize = 18
+MinimizeButton.Text = "_"
+MinimizeButton.Parent = TitleBar
+
+local UIStroke_Minimize = Instance.new("UIStroke")
+UIStroke_Minimize.Color = Color3.fromRGB(0, 180, 255)
+UIStroke_Minimize.Transparency = 0.6
+UIStroke_Minimize.Thickness = 1
+UIStroke_Minimize.Parent = MinimizeButton
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0.05, 0, 1, 0)
+CloseButton.Position = UDim2.new(0.94, 0, 0, 0)
+CloseButton.BackgroundTransparency = 1 -- Transparent
+CloseButton.TextColor3 = Color3.fromRGB(200, 60, 60) -- Blue 
+CloseButton.Font = Enum.Font.SourceSansBold
+CloseButton.TextSize = 18
+CloseButton.Text = "□"
+CloseButton.Parent = TitleBar
+
+local UIStroke_Close = Instance.new("UIStroke")
+UIStroke_Close.Color = Color3.fromRGB(200, 60, 60)
+UIStroke_Close.Transparency = 0.6
+UIStroke_Close.Thickness = 1
+UIStroke_Close.Parent = CloseButton
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, 0, 0.94, 0)
+ContentFrame.Position = UDim2.new(0, 0.0, 0.06, 0)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 40) -- Match MainFrame
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Parent = MainFrame
+
+-- Script List Panel
+local ScriptListPanel = Instance.new("Frame")
+ScriptListPanel.Size = UDim2.new(0.25, 0, 1, 0)
+ScriptListPanel.Position = UDim2.new(0, 0, 0, 0)
+ScriptListPanel.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Darker secondary blue
+ScriptListPanel.BorderSizePixel = 0
+ScriptListPanel.Parent = ContentFrame
+
+local ScriptListTitle = Instance.new("TextLabel")
+ScriptListTitle.Size = UDim2.new(1, 0, 0.08, 0)
+ScriptListTitle.Position = UDim2.new(0, 0, 0, 0)
+ScriptListTitle.BackgroundColor3 = Color3.fromRGB(40, 45, 75) -- Tertiary blue
+ScriptListTitle.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+ScriptListTitle.Font = Enum.Font.SourceSansBold
+ScriptListTitle.TextSize = 16
+ScriptListTitle.Text = "Saved Scripts"
+ScriptListTitle.Parent = ScriptListPanel
+
+local ScriptListScrollingFrame = Instance.new("ScrollingFrame")
+ScriptListScrollingFrame.Size = UDim2.new(1, 0, 0.8, 0)
+ScriptListScrollingFrame.Position = UDim2.new(0, 0, 0.08, 0)
+ScriptListScrollingFrame.BackgroundColor3 = Color3.fromRGB(25, 30, 50) -- Slightly darker for scrolling area
+ScriptListScrollingFrame.BorderSizePixel = 0
+ScriptListScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScriptListScrollingFrame.ScrollBarThickness = 6
+ScriptListScrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 120, 255) -- Blue scrollbar
+ScriptListScrollingFrame.Parent = ScriptListPanel
+
+local UIListLayout_Scripts = Instance.new("UIListLayout")
+UIListLayout_Scripts.FillDirection = Enum.FillDirection.Vertical
+UIListLayout_Scripts.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout_Scripts.Padding = UDim.new(0, 2)
+UIListLayout_Scripts.Parent = ScriptListScrollingFrame
+
+local ScriptListButtonsFrame = Instance.new("Frame")
+ScriptListButtonsFrame.Size = UDim2.new(1, 0, 0.12, 0)
+ScriptListButtonsFrame.Position = UDim2.new(0, 0, 0.88, 0)
+ScriptListButtonsFrame.BackgroundColor3 = Color3.fromRGB(40, 45, 75) -- Tertiary blue
+ScriptListButtonsFrame.BorderSizePixel = 0
+ScriptListButtonsFrame.Parent = ScriptListPanel
+
+local UIListLayout_ListButtons = Instance.new("UIListLayout")
+UIListLayout_ListButtons.FillDirection = Enum.FillDirection.Horizontal
+UIListLayout_ListButtons.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout_ListButtons.VerticalAlignment = Enum.VerticalAlignment.Center
+UIListLayout_ListButtons.Padding = UDim.new(0, 5)
+UIListLayout_ListButtons.Parent = ScriptListButtonsFrame
+
+local NewScriptButton = Instance.new("TextButton")
+NewScriptButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+NewScriptButton.BackgroundTransparency = 1 -- Transparent
+NewScriptButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Vibrant Blue
+NewScriptButton.Font = Enum.Font.SourceSansBold
+NewScriptButton.TextSize = 14
+NewScriptButton.Text = "{حدث}"
+NewScriptButton.Parent = ScriptListButtonsFrame
+
+local UIStroke_New = Instance.new("UIStroke")
+UIStroke_New.Color = Color3.fromRGB(100, 200, 255) -- Light blue glow
+UIStroke_New.Transparency = 0.6
+UIStroke_New.Thickness = 1
+UIStroke_New.Parent = NewScriptButton
+
+local LoadSelectedButton = Instance.new("TextButton")
+LoadSelectedButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+LoadSelectedButton.BackgroundTransparency = 1 -- Transparent
+LoadSelectedButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Vibrant Blue
+LoadSelectedButton.Font = Enum.Font.SourceSansBold
+LoadSelectedButton.TextSize = 14
+LoadSelectedButton.Text = "☆فتح"
+LoadSelectedButton.Parent = ScriptListButtonsFrame
+
+local UIStroke_Load = Instance.new("UIStroke")
+UIStroke_Load.Color = Color3.fromRGB(100, 200, 255) -- Light blue glow
+UIStroke_Load.Transparency = 0.6
+UIStroke_Load.Thickness = 1
+UIStroke_Load.Parent = LoadSelectedButton
+
+local DeleteSelectedButton = Instance.new("TextButton")
+DeleteSelectedButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+DeleteSelectedButton.BackgroundTransparency = 1 -- Transparent
+DeleteSelectedButton.TextColor3 = Color3.fromRGB(200, 60, 60) -- Red
+DeleteSelectedButton.Font = Enum.Font.SourceSansBold
+DeleteSelectedButton.TextSize = 14
+DeleteSelectedButton.Text = "☆حذف"
+DeleteSelectedButton.Parent = ScriptListButtonsFrame
+
+local UIStroke_Delete = Instance.new("UIStroke")
+UIStroke_Delete.Color = Color3.fromRGB(255, 120, 120) -- Light red glow
+UIStroke_Delete.Transparency = 0.6
+UIStroke_Delete.Thickness = 1
+UIStroke_Delete.Parent = DeleteSelectedButton
+
+-- Editor Panel
+local EditorPanel = Instance.new("Frame")
+EditorPanel.Size = UDim2.new(0.75, 0, 1, 0)
+EditorPanel.Position = UDim2.new(0.25, 0, 0, 0)
+EditorPanel.BackgroundColor3 = Color3.fromRGB(20, 25, 40) -- Match MainFrame
+EditorPanel.BorderSizePixel = 0
+EditorPanel.Parent = ContentFrame
+
+local ScriptNameTextBox = Instance.new("TextBox")
+ScriptNameTextBox.Size = UDim2.new(1, 0, 0.08, 0)
+ScriptNameTextBox.Position = UDim2.new(0, 0, 0, 0)
+ScriptNameTextBox.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Darker secondary blue
+ScriptNameTextBox.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+ScriptNameTextBox.Font = Enum.Font.SourceSansBold
+ScriptNameTextBox.TextSize = 16
+ScriptNameTextBox.TextXAlignment = Enum.TextXAlignment.Left
+ScriptNameTextBox.Text = "  Untitled Script"
+ScriptNameTextBox.PlaceholderText = "  Script Name"
+ScriptNameTextBox.Parent = EditorPanel
+
+local CodeTextBox = Instance.new("TextBox")
+CodeTextBox.Size = UDim2.new(1, 0, 0.8, 0)
+CodeTextBox.Position = UDim2.new(0, 0, 0.08, 0)
+CodeTextBox.BackgroundColor3 = Color3.fromRGB(15, 20, 35) -- Very dark blue for code area
+CodeTextBox.TextColor3 = Color3.fromRGB(220, 220, 220) -- Lighter grey for code
+CodeTextBox.Font = Enum.Font.Code
+CodeTextBox.TextSize = 14
+CodeTextBox.TextXAlignment = Enum.TextXAlignment.Left
+CodeTextBox.TextYAlignment = Enum.TextYAlignment.Top
+CodeTextBox.MultiLine = true
+CodeTextBox.ClearTextOnFocus = false
+CodeTextBox.PlaceholderText = "</>مرحبا"
+CodeTextBox.Parent = EditorPanel
+
+local EditorButtonsFrame = Instance.new("Frame")
+EditorButtonsFrame.Size = UDim2.new(1, 0, 0.12, 0)
+EditorButtonsFrame.Position = UDim2.new(0, 0, 0.88, 0)
+EditorButtonsFrame.BackgroundColor3 = Color3.fromRGB(40, 45, 75) -- Tertiary blue
+EditorButtonsFrame.BorderSizePixel = 0
+EditorButtonsFrame.Parent = EditorPanel
+
+local UIListLayout_EditorButtons = Instance.new("UIListLayout")
+UIListLayout_EditorButtons.FillDirection = Enum.FillDirection.Horizontal
+UIListLayout_EditorButtons.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout_EditorButtons.VerticalAlignment = Enum.VerticalAlignment.Center
+UIListLayout_EditorButtons.Padding = UDim.new(0, 5)
+UIListLayout_EditorButtons.Parent = EditorButtonsFrame
+
+local ExecuteButton = Instance.new("TextButton")
+ExecuteButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+ExecuteButton.BackgroundTransparency = 1 -- Transparent
+ExecuteButton.TextColor3 = Color3.fromRGB(40, 180, 90) -- Green for execute
+ExecuteButton.Font = Enum.Font.SourceSansBold
+ExecuteButton.TextSize = 16
+ExecuteButton.Text = "{Lua}"
+ExecuteButton.Parent = EditorButtonsFrame
+
+local UIStroke_Execute = Instance.new("UIStroke")
+UIStroke_Execute.Color = Color3.fromRGB(90, 255, 140) -- Light green glow
+UIStroke_Execute.Transparency = 0.6
+UIStroke_Execute.Thickness = 1
+UIStroke_Execute.Parent = ExecuteButton
+
+local SaveCurrentButton = Instance.new("TextButton")
+SaveCurrentButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+SaveCurrentButton.BackgroundTransparency = 1 -- Transparent
+SaveCurrentButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Vibrant Blue
+SaveCurrentButton.Font = Enum.Font.SourceSansBold
+SaveCurrentButton.TextSize = 16
+SaveCurrentButton.Text = "حفظ☆"
+SaveCurrentButton.Parent = EditorButtonsFrame
+
+local UIStroke_SaveCurrent = Instance.new("UIStroke")
+UIStroke_SaveCurrent.Color = Color3.fromRGB(100, 200, 255) -- Light blue glow
+UIStroke_SaveCurrent.Transparency = 0.6
+UIStroke_SaveCurrent.Thickness = 1
+UIStroke_SaveCurrent.Parent = SaveCurrentButton
+
+local ClearEditorButton = Instance.new("TextButton")
+ClearEditorButton.Size = UDim2.new(0.3, 0, 0.8, 0)
+ClearEditorButton.BackgroundTransparency = 1 -- Transparent
+ClearEditorButton.TextColor3 = Color3.fromRGB(200, 60, 60) -- black
+ClearEditorButton.Font = Enum.Font.SourceSansBold
+ClearEditorButton.TextSize = 16
+ClearEditorButton.Text = "{حذف}"
+ClearEditorButton.Parent = EditorButtonsFrame
+
+local UIStroke_Clear = Instance.new("UIStroke")
+UIStroke_Clear.Color = Color3.fromRGB(255, 120, 120) -- Light red glow
+UIStroke_Clear.Transparency = 0.6
+UIStroke_Clear.Thickness = 1
+UIStroke_Clear.Parent = ClearEditorButton
+
+-- Data Storage
+local SavedScriptsFolder = ScreenGui:FindFirstChild("SavedScripts")
+if not SavedScriptsFolder then
+    SavedScriptsFolder = Instance.new("Folder")
+    SavedScriptsFolder.Name = "SavedScripts"
+    SavedScriptsFolder.Parent = ScreenGui
+end
+
+local SelectedScriptValue = Instance.new("StringValue")
+SelectedScriptValue.Name = "SelectedScript"
+SelectedScriptValue.Value = "" -- Stores the name of the currently selected script
+SelectedScriptValue.Parent = ScreenGui
+
+local currentSelectedScriptButton = nil
+local originalFrameSize = MainFrame.Size
+local minimizedSize = UDim2.new(MainFrame.Size.X.Scale, MainFrame.Size.X.Offset, TitleBar.Size.Y.Scale, TitleBar.Size.Y.Offset)
+local isMinimized = false
+
+local function updateScriptList()
+    for _, child in ipairs(ScriptListScrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local scriptNames = {}
+    for _, scriptValue in ipairs(SavedScriptsFolder:GetChildren()) do
+        if scriptValue:IsA("StringValue") then
+            table.insert(scriptNames, scriptValue.Name)
+        end
+    end
+    table.sort(scriptNames)
+
+    local newCanvasY = 0
+    for _, scriptName in ipairs(scriptNames) do
+        local scriptButton = Instance.new("TextButton")
+        scriptButton.Name = scriptName
+        scriptButton.Size = UDim2.new(0.95, 0, 0, 30)
+        scriptButton.BackgroundTransparency = 1 -- Transparent
+        scriptButton.TextColor3 = Color3.fromRGB(0, 120, 255) -- Blue for script buttons
+        scriptButton.Font = Enum.Font.SourceSans
+        scriptButton.TextSize = 14
+        scriptButton.TextXAlignment = Enum.TextXAlignment.Left
+        scriptButton.Text = "  " .. scriptName
+        scriptButton.Parent = ScriptListScrollingFrame
+
+        local UICorner_ScriptButton = Instance.new("UICorner")
+        UICorner_ScriptButton.CornerRadius = UDim.new(0, 4)
+        UICorner_ScriptButton.Parent = scriptButton
+
+        local UIStroke_ScriptButton = Instance.new("UIStroke")
+        UIStroke_ScriptButton.Color = Color3.fromRGB(100, 200, 255)
+        UIStroke_ScriptButton.Transparency = 0.8
+        UIStroke_ScriptButton.Thickness = 1
+        UIStroke_ScriptButton.Parent = scriptButton
+
+        scriptButton.MouseButton1Click:Connect(function()
+            if currentSelectedScriptButton then
+                currentSelectedScriptButton.BackgroundTransparency = 1
+                currentSelectedScriptButton.UIStroke.Transparency = 0.8
+            end
+            scriptButton.BackgroundTransparency = 0.8 -- Slightly visible when selected
+            scriptButton.UIStroke.Transparency = 0.2 -- Make glow more visible
+            currentSelectedScriptButton = scriptButton
+            SelectedScriptValue.Value = scriptName
+        end)
+        newCanvasY = newCanvasY + 30 + UIListLayout_Scripts.Padding.Offset
+    end
+    ScriptListScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, newCanvasY)
+end
+
+local function loadScript(scriptName)
+    local scriptValue = SavedScriptsFolder:FindFirstChild(scriptName)
+    if scriptValue and scriptValue:IsA("StringValue") then
+        CodeTextBox.Text = scriptValue.Value
+        ScriptNameTextBox.Text = scriptName
+        SelectedScriptValue.Value = scriptName
+        if currentSelectedScriptButton then
+            currentSelectedScriptButton.BackgroundTransparency = 1
+            currentSelectedScriptButton.UIStroke.Transparency = 0.8
+        end
+        local button = ScriptListScrollingFrame:FindFirstChild(scriptName)
+        if button then
+            button.BackgroundTransparency = 0.8
+            button.UIStroke.Transparency = 0.2
+            currentSelectedScriptButton = button
+        end
+    end
+end
+
+local function saveScript(scriptName, scriptContent)
+    local existingScript = SavedScriptsFolder:FindFirstChild(scriptName)
+    if existingScript and existingScript:IsA("StringValue") then
+        existingScript.Value = scriptContent
+    else
+        local newScriptValue = Instance.new("StringValue")
+        newScriptValue.Name = scriptName
+        newScriptValue.Value = scriptContent
+        newScriptValue.Parent = SavedScriptsFolder
+    end
+    updateScriptList()
+    loadScript(scriptName)
+end
+
+local function deleteScript(scriptName)
+    local scriptValue = SavedScriptsFolder:FindFirstChild(scriptName)
+    if scriptValue and scriptValue:IsA("StringValue") then
+        scriptValue:Destroy()
+        updateScriptList()
+        if SelectedScriptValue.Value == scriptName then
+            CodeTextBox.Text = ""
+            ScriptNameTextBox.Text = "  Untitled Script"
+            SelectedScriptValue.Value = ""
+            currentSelectedScriptButton = nil
+        end
+    end
+end
+
+ExecuteButton.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        local func = loadstring(CodeTextBox.Text)
+        if func then
+            func()
+        else
+            warn("Failed to load string, possibly empty or invalid code.")
+        end
+    end)
+    if not success then
+        warn("Execution error: " .. tostring(err))
+    end
+end)
+
+SaveCurrentButton.MouseButton1Click:Connect(function()
+    local scriptName = ScriptNameTextBox.Text:gsub("^%s+", ""):gsub("%s+$", "") -- Trim whitespace
+    if scriptName == "" or scriptName == "Untitled Script" then
+        local namePrompt = Instance.new("TextBox")
+        namePrompt.Size = UDim2.new(0, 200, 0, 30)
+        namePrompt.Position = UDim2.new(0.5, -100, 0.5, -15)
+        namePrompt.BackgroundColor3 = Color3.fromRGB(30, 35, 60) -- Dark blue
+        namePrompt.TextColor3 = Color3.fromRGB(240, 240, 240) -- Off-white
+        namePrompt.Text = ""
+        namePrompt.PlaceholderText = "Enter script name"
+        namePrompt.Font = Enum.Font.SourceSansBold
+        namePrompt.TextSize = 14
+        namePrompt.Parent = ScreenGui
+        namePrompt.ZIndex = 10 -- Ensure it's on top
+
+        local UICorner_Prompt = Instance.new("UICorner")
+        UICorner_Prompt.CornerRadius = UDim.new(0, 4)
+        UICorner_Prompt.Parent = namePrompt
+
+        local UIStroke_Prompt = Instance.new("UIStroke")
+        UIStroke_Prompt.Color = Color3.fromRGB(100, 200, 255)
+        UIStroke_Prompt.Transparency = 0.5
+        UIStroke_Prompt.Thickness = 1
+        UIStroke_Prompt.Parent = namePrompt
+
+        namePrompt.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local newName = namePrompt.Text:gsub("^%s+", ""):gsub("%s+$", "")
+                if newName ~= "" then
+                    saveScript(newName, CodeTextBox.Text)
+                end
+            end
+            namePrompt:Destroy()
+        end)
+        namePrompt:CaptureFocus()
+    else
+        saveScript(scriptName, CodeTextBox.Text)
+    end
+end)
+
+ClearEditorButton.MouseButton1Click:Connect(function()
+    CodeTextBox.Text = ""
+    ScriptNameTextBox.Text = "  Untitled Script"
+    SelectedScriptValue.Value = ""
+    if currentSelectedScriptButton then
+        currentSelectedScriptButton.BackgroundTransparency = 1
+        currentSelectedScriptButton.UIStroke.Transparency = 0.8
+        currentSelectedScriptButton = nil
+    end
+end)
+
+NewScriptButton.MouseButton1Click:Connect(function()
+    CodeTextBox.Text = ""
+    ScriptNameTextBox.Text = "  Untitled Script"
+    SelectedScriptValue.Value = ""
+    if currentSelectedScriptButton then
+        currentSelectedScriptButton.BackgroundTransparency = 1
+        currentSelectedScriptButton.UIStroke.Transparency = 0.8
+        currentSelectedScriptButton = nil
+    end
+end)
+
+LoadSelectedButton.MouseButton1Click:Connect(function()
+    local scriptName = SelectedScriptValue.Value
+    if scriptName ~= "" then
+        loadScript(scriptName)
+    end
+end)
+
+DeleteSelectedButton.MouseButton1Click:Connect(function()
+    local scriptName = SelectedScriptValue.Value
+    if scriptName ~= "" then
+        deleteScript(scriptName)
+    end
+end)
+
+MinimizeButton.MouseButton1Click:Connect(function()
+    if isMinimized then
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(MainFrame, tweenInfo, {Size = originalFrameSize}):Play()
+        ContentFrame.Visible = true
+        isMinimized = false
+    else
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        TweenService:Create(MainFrame, tweenInfo, {Size = minimizedSize}):Play()
+        ContentFrame.Visible = false
+        isMinimized = true
+    end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Initial setup
+updateScriptList()
+
+-- Make the frame draggable
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.Ended then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+end) 
